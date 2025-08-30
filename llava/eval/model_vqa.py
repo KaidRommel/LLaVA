@@ -41,6 +41,7 @@ def eval_model(args):
     for line in tqdm(questions):
         idx = line["question_id"]
         image_file = line["image"]
+        image_file = f"COCO_val2014_{image_file}"
         qs = line["text"]
         cur_prompt = qs
         if model.config.mm_use_im_start_end:

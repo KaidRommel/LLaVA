@@ -19,3 +19,7 @@ __pycache__
 # Exclude some weights
 /openai
 /liuhaotian
+
+datasets/
+hf_models/
+llava-v1.5-7b/

@@ -2,7 +2,8 @@ import argparse
 import json
 import os
 
-import openai
+from openai import OpenAI, RateLimitError
+client = OpenAI()
 import time
 
 NUM_SECONDS_TO_SLEEP = 0.5
@@ -11,8 +12,8 @@ NUM_SECONDS_TO_SLEEP = 0.5
 def get_eval(content: str, max_tokens: int):
     while True:
         try:
-            response = openai.ChatCompletion.create(
-                model='gpt-4-0314',
+            response = client.chat.completions.create(
+                model='o4-mini',
                 messages=[{
                     'role': 'system',
                     'content': 'You are a helpful and precise assistant for checking the quality of the answer.'
@@ -24,8 +25,9 @@ def get_eval(content: str, max_tokens: int):
                 max_tokens=max_tokens,
             )
             break
-        except openai.error.RateLimitError:
-            pass
+        except RateLimitError:
+            print("Rate limit exceeded, waiting for 10 seconds...")
+            time.sleep(10)
         except Exception as e:
             print(e)
         time.sleep(NUM_SECONDS_TO_SLEEP)

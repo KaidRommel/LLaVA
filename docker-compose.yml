@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  controller:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: llava-app:latest
+    command: ["python", "-m", "llava.serve.controller", "--host", "0.0.0.0", "--port", "10000"]
+    ports:
+      - "10000:10000"
+    volumes:
+      - ./llava:/app/llava
+      - ./playground:/app/playground
+      - ./pyproject.toml:/app/pyproject.toml
+  
+  model_worker:
+    image: llava-app:latest
+    command: [
+      "python", "-m", "llava.serve.model_worker",
+      "--host", "0.0.0.0",
+      "--controller-address", "http://controller:10000",
+      "--port", "40000",
+      "--worker-address", "http://model_worker:40000",
+      "--model-path", "/app/llava-v1.5-7b",
+      "--load-4bit"
+    ]
+    volumes:
+      - ./llava-v1.5-7b:/app/llava-v1.5-7b
+      - ./llava:/app/llava
+      - ./playground:/app/playground
+      - ./pyproject.toml:/app/pyproject.toml
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+  
+  web_server:
+    image: llava-app:latest
+    command: [
+      "python", "-m", "llava.serve.gradio_web_server",
+      "--controller-url", "http://controller:10000",
+      "--model-list-mode", "reload"
+    ]
+    ports:
+      - "7860:7860"
+    volumes:
+      - ./llava:/app/llava
+      - ./playground:/app/playground
+      - ./pyproject.toml:/app/pyproject.toml
+    depends_on:
+      - controller
+      - model_worker
+
+  cli:
+    image: llava-app:latest
+    tty: true
+    stdin_open: true
+    volumes:
+      - ./llava-v1.5-7b:/app/llava-v1.5-7b
+      - ./llava:/app/llava
+      - ./playground:/app/playground
+      - ./pyproject.toml:/app/pyproject.toml
+      - ./eval_output:/app/eval_output
+      - ./hf_models:/root/.cache/huggingface/hub
+      - ./scripts:/app/scripts
+    env_file:
+    - .env
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

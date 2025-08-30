@@ -33,3 +33,9 @@ ckpts*
 
 # Demo
 serve_images/
+
+playground/data
+datasets/
+hf_models/
+llava-v1.5-7b/
+.env
